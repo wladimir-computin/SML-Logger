@@ -73,7 +73,7 @@ class Logger:
 			ins = {}
 			ins.update({"timestamp" : self.now})
 			ins.update(data)
-			self.db["values"].insert(ins)
+			self.db["data"].insert(ins)
 			self.db.commit()
 		except Exception as x:
 			print(x)
