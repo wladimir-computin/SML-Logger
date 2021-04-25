@@ -21,7 +21,7 @@ def plot(db, stufftoplot, plotname, from_date = datetime(2000, 1, 1), to_date = 
 		y_axis[stuff] = [v[stuff] for v in data]
 	
 	plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d.%m.%Y %H:%M'))
-	plt.gca().xaxis.set_major_locator(mdates.HourLocator(byhour = list(range(0,24,24))))
+	plt.gca().xaxis.set_major_locator(mdates.HourLocator(byhour = list(range(0,24,12))))
 	
 	# plotting the lines points  
 	for stuff in stufftoplot:
@@ -51,7 +51,7 @@ def main():
 	
 	db_url = f"sqlite:///log/stromverbrauch_{datetime.now().strftime('%Y_%m')}.db"
 	#db_url = f"sqlite:///log/status_{datetime.now().strftime('%Y_11')}.db"
-	from_date = datetime(2020, 9, 1)
+	from_date = datetime(2021, 4, 24)
 	to_date = datetime.now()
 	
 	with dataset.connect(db_url) as db:
