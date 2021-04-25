@@ -31,7 +31,7 @@ descriptions = {"1-0:1.8.0/255":"total_consumption",
 				"1-0:81.7.2/255":"angle_u3_u1",
 				"1-0:81.7.4/255":"angle_i1_u1",
 				"1-0:81.7.15/255":"angle_i2_u2",
-				"1-0:81.7.26/255":"angle_i3_u3"
+				"1-0:81.7.26/255":"angle_i3_u3",
 				"1-0:14.7.0/255":"frequency"}
 
 def add_name(jsn):
