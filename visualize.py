@@ -51,7 +51,7 @@ def main():
 	
 	db_url = f"sqlite:///log/stromverbrauch_{datetime.now().strftime('%Y_%m')}.db"
 	#db_url = f"sqlite:///log/status_{datetime.now().strftime('%Y_11')}.db"
-	from_date = datetime(2021, 4, 24)
+	from_date = datetime(2021, 10, 1)
 	to_date = datetime.now()
 	
 	with dataset.connect(db_url) as db:
