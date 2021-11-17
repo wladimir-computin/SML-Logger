@@ -4,12 +4,15 @@ import sys
 import signal
 import base64
 import socket
+import serial
+import time
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA512
 from Crypto.Random import get_random_bytes
 from threading import Timer
 from cmd import Cmd
 import re
+import json
 
 AES256_KEY_LEN = 32
 AES_GCM_TAG_LEN = 16
@@ -141,7 +144,7 @@ class Transport_TCP:
 class Transport_UDP:
 	def __init__(self, ip, port):	
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		self.sock.settimeout(2)
+		self.sock.settimeout(1)
 		self.ip = ip
 		self.port = port
 
@@ -158,6 +161,38 @@ class Transport_UDP:
 			if len(out):
 				return out
 		return None
+	
+class Transport_SERIAL:
+	ser = None
+	def __init__(self, device="/dev/ttyUSB0", baud=115200):	
+		self.ser = serial.Serial(device, baudrate=baud, timeout=None)
+		
+	def connect(self):
+		pass
+	
+	def close(self):
+		self.ser.close()
+	
+	def send(self, data):
+		self.ser.write(data.encode("UTF-8") + b"\n")
+		self.ser.flush()
+		time.sleep(0.1)
+		self.ser.read(len(data.encode("UTF-8"))+2)
+		out = b""
+		while self.ser.in_waiting > 0:
+			out += self.ser.read(self.ser.in_waiting)
+		try:
+			return out.decode("UTF-8")[0:-1]
+		except:
+			return ""
+	
+class PlainCon:
+	def __init__(self, transport):
+		self.transport = transport
+		
+	def send(self, payload):
+		return self.transport.send(payload)
+	
 	
 class CryptCon:
 	
@@ -235,7 +270,36 @@ class MyPrompt(Cmd):
 		
 	def do_exit(self, inp):
 		return True
-
+	
+	def complete_reads(self, text, line, begidx, endidx):
+		commands = line.split(":")
+		
+		if len(commands) == 2:
+			response = self.cc.send("reads").replace("DATA:F:", "")
+			if "ERROR" not in response:
+				return [vault for vault in response.split("\n") if vault.lower().startswith(text.lower())]
+		
+		if len(commands) == 3:
+			response = self.cc.send("reads:" + commands[1]).replace("DATA:F:", "")
+			if "ERROR" not in response:
+				keys = json.loads(response).keys()
+				return [key for key in keys if key.lower().startswith(text.lower())]
+		
+		return []
+		
+	def complete_writes(self, text, line, begidx, endidx):
+		commands = line.split(":")
+		
+		if len(commands) == 4:
+			if commands[3] == "":
+				response = self.cc.send("reads:" + commands[1] + ":" + commands[2]).replace("DATA:F:", "")
+				if "ERROR" not in response:
+					return [response]
+		else:
+			return self.complete_reads(text, line, begidx, endidx)
+		
+	def complete_reset(self, text, line, begidx, endidx):
+		return self.complete_reads(text,line,begidx,endidx)
 
 	def default(self, inp):
 		print(self.cc.send(inp) + "\n");
@@ -249,20 +313,36 @@ def handler(signum, frame):
 
 def main():
 	signal.signal(signal.SIGINT, handler)
-	#CryptCon.discover()
+	CryptCon.discover()
+	print()
+	cc = None
 	if len(sys.argv) == 4:
-		ip, port = sys.argv[1].split(":")
-		password = sys.argv[2]
-		payload = sys.argv[3]
-		interactive = (payload == "i")
+		if ":" in sys.argv[1]:
+			ip, port = sys.argv[1].split(":")
+			password = sys.argv[2]
+			payload = sys.argv[3]
+			interactive = (payload == "i")
+			
+			try:
+				transport = Transport_UDP(ip, int(port))
+				#transport = Transport_TCP(ip, int(port))
+			except Exception as x:
+				print(F"Connection failed: {x}")
+				exit()
+			cc = CryptCon(transport, password)
 
-		try:
-			transport = Transport_UDP(ip, int(port))
-			#transport = Transport_TCP(ip, int(port))
-		except Exception as x:
-			print(F"Connection failed: {x}")
-			exit()
-		cc = CryptCon(transport, password)
+		else:
+			device = sys.argv[1]
+			baud = sys.argv[2]
+			payload = sys.argv[3]
+			interactive = (payload == "i")
+			
+			try:
+				transport = Transport_SERIAL(device, baud)
+			except Exception as x:
+				print(F"Connection failed: {x}")
+				exit()
+			cc = PlainCon(transport)
 
 		if interactive:
 			prompt = MyPrompt(cc)
@@ -271,6 +351,7 @@ def main():
 		else:
 			print(cc.send(payload));
 			exit()
+		
 
 if __name__== "__main__":
 	main()
