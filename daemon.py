@@ -50,9 +50,11 @@ class Logger:
 	def __init__(self, ip, port, devicepass):
 		transport = Transport_UDP(ip, port)
 		self.cc = CryptCon(transport, devicepass)
+		self.current_db_path = None
+		self.db = None
 	
 	def start(self):
-		self.now = None
+		pass
 		
 	def loop(self):
 		print("Retrieving SML")
@@ -80,8 +82,13 @@ class Logger:
 		ins = {}
 		ins.update({"timestamp" : self.now})
 		ins.update(data)
-		with dataset.connect(f"sqlite:///log/stromverbrauch_{self.now.strftime('%Y_%m')}.db", sqlite_wal_mode=False) as db:
-			db["data"].insert(ins)
+		
+		db_path = f"sqlite:///log/stromverbrauch_{self.now.strftime('%Y_%m')}.db"
+		if self.db == None or self.current_db_path != db_path:
+			self.db = dataset.connect(db_path, sqlite_wal_mode=False)
+			self.current_db_path = db_path
+		
+		self.db["data"].insert(ins)
 		
 	def end(self):
 		pass
