@@ -60,6 +60,7 @@ def main():
 		plot(db, ["current_p1", "current_p2", "current_p3"], "Current over time", from_date, to_date)
 		plot(db, ["voltage_p1", "voltage_p2", "voltage_p3"], "Voltage over time", from_date, to_date)
 		plot(db, ["angle_i1_u1", "angle_i2_u2", "angle_i3_u3"], "Angle over time", from_date, to_date)
+		plot(db, ["total_consumption"], "Total over time", from_date, to_date)
 
 if __name__== "__main__":
 	main() 

@@ -18,6 +18,8 @@ JSONEncoder.default = _default
 
 logger = None
 
+RETRYS = 4
+
 	
 descriptions = {"1-0:1.8.0/255":"total_consumption",
 				"1-0:16.7.0/255":"power",
@@ -53,10 +55,20 @@ class Logger:
 		self.now = None
 		
 	def loop(self):
-		sml_json = self.cc.send("parsedsml").replace("DATA::", "")
+		print("Retrieving SML")
+		sml_json = ""
+		for i in range(RETRYS):
+			sml_json = self.cc.send("SML:parsedsml").replace("DATA::", "")
+			if sml_json != "[]":
+				break
+			else:
+				print("Trying again")
+				time.sleep(2)
 		
 		jsn = json.loads(sml_json)
 		jsn = add_name(jsn)
+
+		print(json.dumps(jsn, indent=4))
 		
 		data = {}
 		desc = {}
@@ -64,21 +76,12 @@ class Logger:
 		for element in jsn:
 			data[element["name"]] = element["val"]
 		
-		try:
-			now = datetime.now().replace(microsecond=0)
-			if self.now is None or self.now.month != now.month:
-				self.db = dataset.connect(f"sqlite:///log/stromverbrauch_{now.strftime('%Y_%m')}.db")
-			self.now = now
-			self.db.begin()
-			ins = {}
-			ins.update({"timestamp" : self.now})
-			ins.update(data)
-			self.db["data"].insert(ins)
-			self.db.commit()
-		except Exception as x:
-			print(x)
-			self.db.rollback()
-			#json.dump(groups, f, indent=4)
+		self.now = datetime.now().replace(microsecond=0)
+		ins = {}
+		ins.update({"timestamp" : self.now})
+		ins.update(data)
+		with dataset.connect(f"sqlite:///log/stromverbrauch_{self.now.strftime('%Y_%m')}.db", sqlite_wal_mode=False) as db:
+			db["data"].insert(ins)
 		
 	def end(self):
 		pass
