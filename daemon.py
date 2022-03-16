@@ -61,7 +61,7 @@ class Logger:
 		sml_json = ""
 		for i in range(RETRYS):
 			sml_json = self.cc.send("SML:parsedsml")
-			if sml_json != None and sml_json != "[]":
+			if sml_json != None and sml_json != "DATA::[]":
 				sml_json = sml_json.replace("DATA::", "")
 				break
 			else:
