@@ -60,8 +60,9 @@ class Logger:
 		print("Retrieving SML")
 		sml_json = ""
 		for i in range(RETRYS):
-			sml_json = self.cc.send("SML:parsedsml").replace("DATA::", "")
-			if sml_json != "[]":
+			sml_json = self.cc.send("SML:parsedsml")
+			if sml_json != None and sml_json != "[]":
+				sml_json = sml_json.replace("DATA::", "")
 				break
 			else:
 				print("Trying again")
