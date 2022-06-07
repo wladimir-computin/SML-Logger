@@ -61,35 +61,37 @@ class Logger:
 		sml_json = ""
 		for i in range(RETRYS):
 			sml_json = self.cc.send("SML:parsedsml")
-			if sml_json != None and sml_json != "DATA::[]":
+			if sml_json is not None and sml_json != "DATA::[]":
 				sml_json = sml_json.replace("DATA::", "")
 				break
 			else:
 				print("Trying again")
 				time.sleep(2)
+			
+		if sml_json is not None and sml_json != "":
 		
-		jsn = json.loads(sml_json)
-		jsn = add_name(jsn)
+			jsn = json.loads(sml_json)
+			jsn = add_name(jsn)
 
-		print(json.dumps(jsn, indent=4))
-		
-		data = {}
-		desc = {}
-		
-		for element in jsn:
-			data[element["name"]] = element["val"]
-		
-		self.now = datetime.now().replace(microsecond=0)
-		ins = {}
-		ins.update({"timestamp" : self.now})
-		ins.update(data)
-		
-		db_path = f"sqlite:///log/stromverbrauch_{self.now.strftime('%Y_%m')}.db"
-		if self.db == None or self.current_db_path != db_path:
-			self.db = dataset.connect(db_path, sqlite_wal_mode=False)
-			self.current_db_path = db_path
-		
-		self.db["data"].insert(ins)
+			print(json.dumps(jsn, indent=4))
+			
+			data = {}
+			desc = {}
+			
+			for element in jsn:
+				data[element["name"]] = element["val"]
+			
+			self.now = datetime.now().replace(microsecond=0)
+			ins = {}
+			ins.update({"timestamp" : self.now})
+			ins.update(data)
+			
+			db_path = f"sqlite:///log/stromverbrauch_{self.now.strftime('%Y_%m')}.db"
+			if self.db is None or self.current_db_path != db_path:
+				self.db = dataset.connect(db_path, sqlite_wal_mode=False)
+				self.current_db_path = db_path
+			
+			self.db["data"].insert(ins)
 		
 	def end(self):
 		pass
