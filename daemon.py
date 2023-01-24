@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cryptoiot import *
+from ciot_client2 import *
 from datetime import datetime
 import time
 import signal
