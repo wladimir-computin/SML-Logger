@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from ciot-client2 import *
+from ciotclient2 import *
 from datetime import datetime
 import time
 import signal
