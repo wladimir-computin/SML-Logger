@@ -34,7 +34,7 @@ FLAG_BINARY = "B"
 FLAGS_LEN = 5
 
 		
-class EncryptedMessage_v2:
+class EncryptedMessage:
 	
 	def __init__(self, rawdata):
 		self.rawdata = rawdata
@@ -69,15 +69,15 @@ class EncryptedMessage_v2:
 			except:
 				payload = ""
 		
-		return PlaintextMessage_v2(self.header, flags, challenge_response, challenge_request, payload)
+		return PlaintextMessage(self.header, flags, challenge_response, challenge_request, payload)
 		#except Exception as x:
-			#return PlaintextMessage_v2(self.header, "", "", "", self.ciphertext)
+			#return PlaintextMessage(self.header, "", "", "", self.ciphertext)
 		
 	def __str__(self):
 		return self.rawdata
 		
 
-class PlaintextMessage_v2:
+class PlaintextMessage:
 	
 	def __init__(self, header, flags, challenge_response, challenge_request,  payload):
 		self.header = header
@@ -101,13 +101,13 @@ class PlaintextMessage_v2:
 		data += self.header.encode() + b":" + fl + b":" + self.challenge_response + self.challenge_request + self.payload.encode()
 		ciphertext, tag = cipher.encrypt_and_digest(data)
 		
-		return EncryptedMessage_v2(f"[BEGIN]{ENCRYPTED_CIOTv2_MESSAGE}{base64.b64encode(iv+tag+ciphertext).decode()}[END]")
+		return EncryptedMessage(f"[BEGIN]{ENCRYPTED_CIOTv2_MESSAGE}{base64.b64encode(iv+tag+ciphertext).decode()}[END]")
 	
 	def __str__(self):
 		return f"{self.header}:{self.flags}:{self.challenge_response}:{self.challenge_request}:{self.payload}"
 
 
-class ChallengeManager_v2:
+class ChallengeManager:
 	
 	def __init__(self):
 		self.challenge_response = bytes(CHALLENGE_LEN)
@@ -211,7 +211,7 @@ class PlainCon:
 		return self.transport.send(payload)
 	
 	
-class CryptCon_v2:
+class CryptCon:
 	
 	def __init__(self, transport, password):
 		h = SHA512.new((password + KEY_SALT).encode())
@@ -220,15 +220,15 @@ class CryptCon_v2:
 		
 		self.key = h.digest()[0:32]
 		self.transport = transport
-		self.chman = ChallengeManager_v2()
+		self.chman = ChallengeManager()
 	
 	def send(self, payload):
 		if self.chman.getCurrentChallengeResponse() == bytes(CHALLENGE_LEN):
-			message = PlaintextMessage_v2("H", None, None, self.chman.generateChallenge(), "")
+			message = PlaintextMessage("H", None, None, self.chman.generateChallenge(), "")
 			encrypted = message.encrypt(self.key)
 			self.transport.connect()
 			try:
-				encrypted_response = EncryptedMessage_v2(self.transport.send(encrypted.rawdata.encode()).decode())
+				encrypted_response = EncryptedMessage(self.transport.send(encrypted.rawdata.encode()).decode())
 			except:
 				print("Communication failed, wrong password?")
 				return
@@ -240,9 +240,9 @@ class CryptCon_v2:
 		else:
 			self.transport.connect()
 		
-		message = PlaintextMessage_v2("D", None, self.chman.getCurrentChallengeResponse(), self.chman.generateChallenge(), payload)
+		message = PlaintextMessage("D", None, self.chman.getCurrentChallengeResponse(), self.chman.generateChallenge(), payload)
 		encrypted = message.encrypt(self.key)
-		encrypted_response = EncryptedMessage_v2(self.transport.send(encrypted.rawdata.encode()).decode())
+		encrypted_response = EncryptedMessage(self.transport.send(encrypted.rawdata.encode()).decode())
 		response = encrypted_response.decrypt(self.key)
 		self.transport.close()
 		if self.chman.verifyChallenge(response.challenge_response):
@@ -356,7 +356,7 @@ def main():
 			except Exception as x:
 				print(F"Connection failed: {x}")
 				exit()
-			cc = CryptCon_v2(transport, password)
+			cc = CryptCon(transport, password)
 
 		else:
 			device = sys.argv[1]
@@ -379,7 +379,7 @@ def main():
 			print(cc.send(payload));
 			exit()
 	else:
-		CryptCon_v2.discover()
+		CryptCon.discover()
 		print()
 
 if __name__== "__main__":
