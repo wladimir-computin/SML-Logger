@@ -244,6 +244,7 @@ class CryptCon:
 		encrypted = message.encrypt(self.key)
 		encrypted_response = EncryptedMessage(self.transport.send(encrypted.rawdata.encode()).decode())
 		response = encrypted_response.decrypt(self.key)
+		response.flags = response.flags.replace("\0", "")
 		self.transport.close()
 		if self.chman.verifyChallenge(response.challenge_response):
 			self.chman.rememberChallengeResponse(response.challenge_request)
