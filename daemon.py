@@ -61,15 +61,15 @@ class Logger:
 		sml_json = ""
 		for i in range(RETRYS):
 			sml_json = self.cc.send("SML:parsedsml")
-			if sml_json is not None and sml_json != "DATA::[]":
-				sml_json = sml_json.replace("DATA::", "")
+			if sml_json is not None and sml_json != "D::[]":
+				sml_json = sml_json.replace("D::", "")
 				break
 			else:
 				print("Trying again")
 				time.sleep(2)
 			
 		if sml_json is not None and sml_json != "":
-		
+			print(sml_json)
 			jsn = json.loads(sml_json)
 			jsn = add_name(jsn)
 
